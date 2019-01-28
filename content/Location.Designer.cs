@@ -95,5 +95,14 @@ namespace klib.content {
                 return ResourceManager.GetString("L00004_2", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to [{0}0005] The formart URL invalid. {1} - {2}.
+        /// </summary>
+        internal static string L00005_2 {
+            get {
+                return ResourceManager.GetString("L00005_2", resourceCulture);
+            }
+        }
     }
 }

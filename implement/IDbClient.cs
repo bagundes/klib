@@ -7,9 +7,11 @@ using System.Threading.Tasks;
 namespace klib.implement
 {
     public interface IDbClient : System.IDisposable
-    {        
+    {
+        bool IsFirstLine { get;}
         dynamic Do(dynamic alias, params object[] values);
         int DoQuery(string sql, params object[] values);
+        int DoQueryManager(string qname, params object[] values);
         bool NoQuery(string sql, params object[] values);
         object[] FixValues(object[] values, bool manipulation = false);
         /// <summary>
@@ -23,7 +25,7 @@ namespace klib.implement
         int CountRows();
         int CountColumns();
         T Load<T>();
-        void Fist();
+        void First();
         void Last();
     }
 }

@@ -129,4 +129,7 @@
   <data name="L00004_2" xml:space="preserve">
     <value>[{0}0004] The parameter {1}:{2} can't be null or empty.</value>
   </data>
+  <data name="L00005_2" xml:space="preserve">
+    <value>[{0}0005] The formart URL invalid. {1} - {2}</value>
+  </data>
 </root>

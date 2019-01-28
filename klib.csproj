@@ -68,10 +68,16 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="DnsClient, Version=1.2.0.0, Culture=neutral, PublicKeyToken=4574bb5573c51424, processorArchitecture=MSIL">
-      <HintPath>..\..\..\teamsoft\SuiteHelper\packages\DnsClient.1.2.0\lib\net45\DnsClient.dll</HintPath>
+      <HintPath>packages\DnsClient.1.2.0\lib\net45\DnsClient.dll</HintPath>
+    </Reference>
+    <Reference Include="MongoDB.Bson, Version=2.7.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\MongoDB.Bson.2.7.2\lib\net45\MongoDB.Bson.dll</HintPath>
     </Reference>
     <Reference Include="MongoDB.Driver, Version=2.7.2.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\..\..\teamsoft\SuiteHelper\packages\MongoDB.Driver.2.7.2\lib\net45\MongoDB.Driver.dll</HintPath>
+    </Reference>
+    <Reference Include="MongoDB.Driver.Core, Version=2.7.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\MongoDB.Driver.Core.2.7.2\lib\net45\MongoDB.Driver.Core.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\..\..\teamsoft\packages\Newtonsoft.Json.12.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
@@ -82,6 +88,7 @@
     </Reference>
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Management" />
     <Reference Include="System.Runtime.InteropServices.RuntimeInformation, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\..\..\teamsoft\SuiteHelper\packages\System.Runtime.InteropServices.RuntimeInformation.4.3.0\lib\net45\System.Runtime.InteropServices.RuntimeInformation.dll</HintPath>
       <Private>True</Private>
@@ -89,7 +96,9 @@
     </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="Microsoft.CSharp">
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
@@ -102,6 +111,8 @@
     </Compile>
     <Compile Include="core\Cron.cs" />
     <Compile Include="core\PrinterHelper.cs" />
+    <Compile Include="core\Report.cs" />
+    <Compile Include="model\Win32_BIOS.cs" />
     <Compile Include="dbase\DbClient.cs" />
     <Compile Include="E.cs" />
     <Compile Include="implement\IDbClient.cs" />
@@ -110,6 +121,7 @@
     <Compile Include="model\Credentials.cs" />
     <Compile Include="model\Parameter.cs" />
     <Compile Include="model\Printer.cs" />
+    <Compile Include="model\Report.cs" />
     <Compile Include="model\Select.cs" />
     <Compile Include="R.cs" />
     <Compile Include="Values.cs" />
@@ -130,6 +142,7 @@
   <ItemGroup>
     <Content Include=".gitignore" />
     <Content Include="content\sql\fn_regexreplace.mssql.sql" />
+    <Content Include="content\sql\fn_todatetime.mssql.sql" />
     <EmbeddedResource Include="content\sql\sp_para.mssql.sql" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

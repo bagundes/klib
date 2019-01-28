@@ -14,7 +14,65 @@ namespace klib
         public readonly object Value;
         public int Lenght => GetLenght();
 
-        public bool IsEmpty => String.IsNullOrEmpty(Value.ToString()) || String.IsNullOrWhiteSpace(Value.ToString());
+        #region Primitives
+        public bool ToBool()
+        {
+            //00001
+            var foo = Value.ToString();
+            switch (foo.ToUpper())
+            {
+                case "1":
+                case "Y":
+                case "YES":
+                case "S":
+                case "SI":
+                case "SIM":
+                case "T":
+                case "TRUE":
+                    return true;
+                default:
+                    return false;
+
+            }
+        }
+
+        public Uri ToUrl()
+        {
+            try
+            {
+                return new Uri(Value.ToString());
+            }catch(System.UriFormatException ex)
+            {
+                throw new LException(5, Value.ToString(), ex.Message);
+            }
+        }
+        #endregion
+
+
+
+
+
+
+
+
+
+
+        /// ///////////////////////////////////////////////////////////////////////////////////
+        public DirectoryInfo ToDirectory()
+        {
+            if (System.IO.Directory.Exists(Value.ToString()))
+                return new DirectoryInfo(Value.ToString());
+
+            switch(Value.ToString().ToUpper())
+            {
+                case "%TEMP%": return Shell.TempDir();
+                default: throw new LException(1, $"Directory not exists or without permissions. {Value.ToString()}");
+            }
+        }
+
+        public bool IsEmpty => Value == null 
+            || String.IsNullOrEmpty(Value.ToString()) 
+            || String.IsNullOrWhiteSpace(Value.ToString());
 
 
         public Values(object value)
@@ -75,7 +133,15 @@ namespace klib
             }
         }
 
+        public string ToJson()
+        {
+            return Newtonsoft.Json.JsonConvert.SerializeObject(Value);
+        }
 
+        public dynamic ToAny()
+        {
+            return Value;
+        }
         public override string ToString()
         {
             return Value.ToString();
@@ -86,6 +152,23 @@ namespace klib
             return DateTime.ParseExact(Value.ToString(),format, System.Globalization.CultureInfo.InvariantCulture);
         }
 
+        public int TimeToInt(bool addsecs = false)
+        {
+            if (addsecs)
+                return int.Parse(ToDateTime().ToString("HHmmss"));
+            else
+                return int.Parse(ToDateTime().ToString("HHmm"));
+        }
+
+        public DateTime ToDateTime()
+        {
+            return (DateTime)Value;
+        }
+
+        public DateTime ToDate()
+        {
+            return ToDateTime().Date;
+        }
         public double ToDouble(string point)
         {
             var val = Value.ToString();
@@ -99,17 +182,17 @@ namespace klib
             return double.Parse(Regex.Replace(Value.ToString(), "[^0-9.]+", ""));
         }
 
-        public string OnlyNumbers(int def = 0)
+        public Values OnlyNumbers(int def = 0)
         {
             if (IsEmpty)
-                return def.ToString();
+                return new Values(def);
 
             var val = Regex.Match(ToString(), @"\d+").Value;
 
             if (String.IsNullOrEmpty(val))
-                return def.ToString();
+                return new Values(def);
             else
-                return val;
+                return new Values(val);
 
         }
 
@@ -171,14 +254,16 @@ namespace klib
             return printer;
         }
 
-        public System.IO.DirectoryInfo Directory(bool validate = true)
-        {
-            if (validate && !System.IO.Directory.Exists(Value.ToString()))
-                throw new LException(1, $"Directory {Value.ToString()} not exists");
+        //public System.IO.DirectoryInfo Directory(bool validate = true)
+        //{
+        //    if (validate && !System.IO.Directory.Exists(Value.ToString()))
+        //        throw new LException(1, $"Directory {Value.ToString()} not exists");
 
-            return new System.IO.DirectoryInfo(Value.ToString());
-        }
+        //    return new System.IO.DirectoryInfo(Value.ToString());
+        //}
         #endregion
+
+
     }
 
     public static class ValuesEx
@@ -225,6 +310,17 @@ namespace klib
                 return new StreamReader(assembly.GetManifestResourceStream(resourceName));
             else
                 return null;
+        }
+
+        /// <summary>
+        /// Transform @!! to Namespace 
+        /// </summary>
+        /// <param name="value">Value</param>
+        /// <returns></returns>
+        public static string NS(string value)
+        {
+            value = value.Replace("U_!!", $"U_{klib.R.Company.NS}");
+            return value.Replace("@!!", $"@{klib.R.Company.NS}");
         }
     }
 }

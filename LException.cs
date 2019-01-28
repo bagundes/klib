@@ -18,6 +18,7 @@ namespace klib
 
         public LException(int code, params object[] values) : base(code, values)
         {
+
         }
     }
 }

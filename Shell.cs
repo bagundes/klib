@@ -6,17 +6,82 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using System.Net;
 
 namespace klib
 {
     public static class Shell
     {
-        public static void WriteLine(string message)
+        public const string LOG = "SHELL";
+#region Report
+        public static void Report(implement.LException lex)
+        {
+            var rep = new model.Report();
+            rep.CID = "Undefined";
+            rep.Id = lex.Code;
+            rep.Message = lex.Message;
+            rep.Details = ValuesEx.To(lex).ToJson();
+            core.ReportSystem.Save(rep);
+            core.ReportSystem.Send(rep);
+        }
+
+        public static void Report(string message)
+        {
+            var rep = new model.Report();
+            rep.CID = "Undefined";
+            rep.Id = 1;
+            rep.Message = message;
+            rep.Details = null;
+            core.ReportSystem.Save(rep);
+            core.ReportSystem.Send(rep);
+        }
+        #endregion
+
+        #region Debug
+        public static void WriteLine(int id, string log, Exception ex)
         {
             #region DEBUG
-            Console.WriteLine(DateTime.Now.ToString("HH:mm:ss") + " - " + message);
+            if (log.Length > 6)
+                log = log.Substring(0, 6);
+            else if (log.Length < 6)
+                log += new string(' ', 6 - log.Length);
+
+            if (System.Environment.UserInteractive)
+
+                Console.WriteLine($"ID{id.ToString("0000")} {DateTime.Now.ToString("HH:mm:ss")} ! {log.ToUpper()}: {ex.Message}");
+            else
+                Shell.Report(ex.Message);
             #endregion
         }
+
+        public static void WriteLine(int id, string log, string message, bool clear = false)
+        {
+            if (log.Length > 6)
+                log = log.Substring(0, 6);
+            else if (log.Length < 6)
+                log += new string(' ', 6 - log.Length);
+            WriteLine(id, $"{log.ToUpper()}: {message}", clear);
+        }
+
+        [Obsolete]
+        public static void WriteLine(int id, string message, bool clear = false)
+        {
+            #region DEBUG
+            if (System.Environment.UserInteractive)
+            {
+                if (clear)
+                    Console.Clear();
+
+                Console.WriteLine($"ID{id.ToString("0000")} {DateTime.Now.ToString("HH:mm:ss")} . {message}");
+            } else
+            {
+                Shell.Report(message);
+            }
+            #endregion
+        }
+        #endregion
+
+        #region CronTab
         public static bool CronNow(string mask)
         {
             var cron = new core.Cron(mask);
@@ -28,7 +93,9 @@ namespace klib
             var cron = new core.Cron(mask);
             return cron.Wait();
         }
+        #endregion
 
+        #region Encrypton
         /// <summary>
         /// Encrypto the string
         /// </summary>
@@ -91,6 +158,44 @@ namespace klib
                 return sBuilder.ToString();
             }
         }
+
+        /// <summary>
+        /// Mixer the values
+        /// </summary>
+        /// <param name="def">Mixer default or random</param>
+        /// <param name="values"></param>
+        /// <returns></returns>
+        public static string StringMixer(bool def, params object[] values)
+        {
+            var totalSize = 0;
+            var biggerString = 0;
+            var works = values.Length;
+            var result = String.Empty;
+
+            foreach (string value in values)
+            {
+                totalSize += value.Length;
+                biggerString = biggerString < value.Length ? value.Length : biggerString;
+            }
+
+            for (int i = 0; i < biggerString; i++)
+            {
+                foreach (string value in values)
+                {
+                    if (value.Length >= (i + 1))
+                        result = value[i] + result;
+                }
+            }
+
+            if (result.Length == totalSize)
+                return result;
+            else
+                throw new LException(1, "Error to mixer the strings");
+
+        }
+        #endregion
+
+        #region IO
         /// <summary>
         /// Verify if the file is locked
         /// </summary>
@@ -109,8 +214,9 @@ namespace klib
             {
                 stream = file.Open(FileMode.Open, FileAccess.Read, FileShare.None);
             }
-            catch (IOException)
+            catch (IOException ex)
             {
+                klib.Shell.WriteLine(R.Project.ID, $"SHELL : File is lock. {ex.Message}");
                 //o arquivo está indiposnível pelas seguintes causas:
                 //está sendo escrito
                 //utilizado por uma outra thread
@@ -131,22 +237,22 @@ namespace klib
         /// <summary>
         /// Save the stream in file
         /// </summary>
-        /// <param name="fileName">Full file name</param>
+        /// <param name="file">Full file name</param>
         /// <param name="info">Information to be save/param>
         /// <param name="wait">Wait is the file unlocked?</param>
-        public static void SaveInFile(string fileName, Stream info, bool wait = false)
+        public static void SaveInFile(FileInfo file, Stream info, bool wait = false)
         {
  
             try
             {
 
-                while (wait == true && Shell.IsFileLocked(fileName))
+                while (wait == true && Shell.IsFileLocked(file))
                     System.Threading.Thread.Sleep(1500);
 
-                using (var file = new System.IO.StreamWriter(fileName, true))
+                using (var fileW = new System.IO.StreamWriter(file.FullName, true))
                 {
-                    file.WriteLine(info);
-                    file.Close();
+                    fileW.WriteLine(info);
+                    fileW.Close();
                 }
 
             }
@@ -155,26 +261,28 @@ namespace klib
         
             }
         }
-
         
-        public static void SaveInFile(string fileName, string info, bool ovride = false, bool wait = false)
+        public static void SaveInFile(FileInfo file, string info, bool ovride = false, bool wait = false)
         {
             //byte[] byteArray = Encoding.UTF8.GetBytes(info);
             //SaveInFile(fileName, new MemoryStream(byteArray), wait);
 
             try
             {
-
-                while (wait == true && Shell.IsFileLocked(fileName))
-                    System.Threading.Thread.Sleep(1500);
-
-                if (ovride && System.IO.File.Exists(fileName))
-                    System.IO.File.Delete(fileName);
-
-                using (var file = new System.IO.StreamWriter(fileName, true))
+                var exists = System.IO.File.Exists(file.FullName);
+                while (wait == true && Shell.IsFileLocked(file) && exists)
                 {
-                    file.WriteLine(info);
-                    file.Close();
+                    klib.Shell.WriteLine(R.Project.ID, $"SHELL : waiting the file is locked. {file.FullName}");
+                    System.Threading.Thread.Sleep(1500);
+                }
+
+                if (ovride && exists)
+                    System.IO.File.Delete(file.FullName);
+
+                using (var fileW = new System.IO.StreamWriter(file.FullName, true))
+                {
+                    fileW.WriteLine(info);
+                    fileW.Close();
                 }
 
             }
@@ -234,42 +342,6 @@ namespace klib
             return new System.IO.FileInfo(filename);
         }
 
-
-        /// <summary>
-        /// Mixer the values
-        /// </summary>
-        /// <param name="def">Mixer default or random</param>
-        /// <param name="values"></param>
-        /// <returns></returns>
-        public static string StringMixer(bool def, params object[] values)
-        {
-            var totalSize = 0;
-            var biggerString = 0;
-            var works = values.Length;
-            var result = String.Empty;
-
-            foreach (string value in values)
-            {
-                totalSize += value.Length;
-                biggerString = biggerString < value.Length ? value.Length : biggerString;
-            }
-
-           for(int i = 0; i < biggerString; i++)
-            {
-                foreach (string value in values)
-                {
-                    if (value.Length >= (i + 1))
-                        result = value[i] + result;
-                }
-            }
-
-            if (result.Length == totalSize)
-                return result;
-            else
-                throw new LException(1, "Error to mixer the strings");
-            
-        }
-
         /// <summary>
         /// Get the user temp directory.
         /// </summary>
@@ -284,7 +356,62 @@ namespace klib
             return new System.IO.DirectoryInfo($"{tempDir}/{createFolder}");
         }
 
+        public static FileInfo Mktemp(string ext = null)
+        {
+            String fileName;
+            var random = System.IO.Path.GetRandomFileName();
+            if (String.IsNullOrEmpty(ext))
+                fileName = random;
+            else
+                fileName = $"{random.Split('.')[0]}.{ext}";
 
+            var fileFull = System.IO.Path.Combine(TempDir("tmp").FullName, fileName);
+
+            using (System.IO.File.Create(fileFull))
+                return new FileInfo(fileFull);
+
+        }
+        
+       public static void SendToFTP(Uri url, FileInfo file, klib.model.Credentials1 cred)
+       {
+            try
+            {
+                url = new Uri($"{url.AbsoluteUri}{file.Name}");
+                var request = WebRequest.Create(url) as FtpWebRequest;
+                request.Method = WebRequestMethods.Ftp.UploadFile;
+                request.Credentials = new NetworkCredential(cred.User, cred.Passwd);
+                request.UseBinary = true;
+                request.ContentLength = file.Length;
+
+                using (var resp = (FtpWebResponse)request.GetResponse())
+                     klib.Shell.WriteLine(R.Project.ID, LOG, $"FTP response {resp.StatusCode}");
+                
+
+                using (FileStream fs = file.OpenRead())
+                {
+                    byte[] buffer = new byte[2048];
+                    int bytesSent = 0;
+                    int bytes = 0;
+
+                    using (var stream = request.GetRequestStream())
+                    {
+                        while (bytesSent < file.Length)
+                        {
+                            bytes = fs.Read(buffer, 0, buffer.Length);
+                            stream.Write(buffer, 0, bytes);
+                            bytesSent += bytes;
+                        }
+                    }
+                }
+            }catch(Exception ex)
+            {
+                WriteLine(R.Project.ID, LOG, $"Error trying to send the {file.FullName} in {url.AbsoluteUri}. {ex.Message}");
+                throw ex;
+            }
+        }
+        #endregion
+
+        #region Printer
         public static bool Printer(model.Printer printer, FileInfo file)
         {
             // Open the file.
@@ -325,5 +452,6 @@ namespace klib
             Marshal.FreeCoTaskMem(pBytes);
             return bSucess;
         }
+        #endregion
     }
 }

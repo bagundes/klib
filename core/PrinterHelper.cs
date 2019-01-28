@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace klib.core
 {
 
-    public class PrinterHelper
+    internal class PrinterHelper
     {
         // Structure and API declarions:
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
