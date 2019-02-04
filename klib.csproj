@@ -112,6 +112,7 @@
     <Compile Include="core\Cron.cs" />
     <Compile Include="core\PrinterHelper.cs" />
     <Compile Include="core\Report.cs" />
+    <Compile Include="FormatTo.cs" />
     <Compile Include="model\Win32_BIOS.cs" />
     <Compile Include="dbase\DbClient.cs" />
     <Compile Include="E.cs" />
@@ -141,8 +142,8 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include=".gitignore" />
-    <Content Include="content\sql\fn_regexreplace.mssql.sql" />
-    <Content Include="content\sql\fn_todatetime.mssql.sql" />
+    <None Include="content\sql\fn_regexreplace.mssql.url" />
+    <None Include="content\sql\fn_todatetime.mssql.url" />
     <EmbeddedResource Include="content\sql\sp_para.mssql.sql" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

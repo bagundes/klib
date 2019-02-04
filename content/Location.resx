@@ -132,4 +132,8 @@
   <data name="L00005_2" xml:space="preserve">
     <value>[{0}0005] The formart URL invalid. {1} - {2}</value>
   </data>
+  <data name="L00006_3" xml:space="preserve">
+    <value>[{0}0006] It isn't possible convert the {1} value to {2}. {3}</value>
+    <comment>Generic message when error occur to convert the type of variables</comment>
+  </data>
 </root>

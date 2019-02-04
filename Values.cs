@@ -14,12 +14,88 @@ namespace klib
         public readonly object Value;
         public int Lenght => GetLenght();
 
-        #region Primitives
-        public bool ToBool()
+        public string Name { get; protected set; }
+        /// <summary>
+        /// Transport more informations 
+        /// </summary>
+        public string Comments = String.Empty;
+
+        public Values(object value)
         {
-            //00001
-            var foo = Value.ToString();
-            switch (foo.ToUpper())
+            Value = value;
+        }
+
+        public Values(object value, string name)
+        {
+            Value = value;
+            Name = name;
+        }
+
+        #region Informations
+        /// <summary>
+        /// Verify the value is type of numeric
+        /// </summary>
+        /// <param name="tryParse">The method will ignore the type and attempt to parse</param>
+        /// <returns></returns>
+        public bool IsNumber(bool tryParse = false)
+        {
+            //0002
+            if (tryParse)
+            {
+                try
+                {
+                    var foo = Decimal.Parse(Value.ToString());
+                    return true;
+                }
+                catch
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                switch (TypeOf)
+                {
+                    case "DOUBLE":
+                    case "INT":
+                    case "INT16":
+                    case "INT32":
+                    case "INT64":
+                    case "DECIMAL":
+                        return true;
+                    default: return false;
+                }
+            }
+        }
+
+        public bool IsEmpty => Value == null
+            || String.IsNullOrEmpty(Value.ToString())
+            || String.IsNullOrWhiteSpace(Value.ToString());
+        public string TypeOf => Value.GetType().Name.ToUpper();
+        #endregion
+
+        #region Validations
+        public bool StartWith(string val)
+        {
+            return Value.ToString().StartsWith(val, StringComparison.InvariantCultureIgnoreCase);
+        }
+
+        public bool IsTrue => ToBool();
+        public bool IsFalse => !ToBool();
+
+        #endregion
+
+
+
+        #region Convert
+        public bool ToBool(string totrue = null)
+        {
+            //00002         
+            var foo = Value.ToString().ToUpper();
+            if (foo != null && totrue != null && foo == totrue.ToUpper())
+                return true;
+
+            switch (foo)
             {
                 case "1":
                 case "Y":
@@ -36,19 +112,35 @@ namespace klib
             }
         }
 
+        public decimal ToDecimal()
+        {
+            try
+            {
+                return Decimal.Parse(Value.ToString());
+            }catch(Exception ex)
+            {
+                throw new LException(5, Value.ToString(), "Decimal", ex.Message);
+            }
+        }
+
+        #endregion
+        #region Objects
         public Uri ToUrl()
         {
             try
             {
                 return new Uri(Value.ToString());
-            }catch(System.UriFormatException ex)
+            }
+            catch (System.UriFormatException ex)
             {
                 throw new LException(5, Value.ToString(), ex.Message);
             }
         }
+        public FileInfo ToFile()
+        {
+            return new FileInfo(ToString());
+        }
         #endregion
-
-
 
 
 
@@ -70,15 +162,6 @@ namespace klib
             }
         }
 
-        public bool IsEmpty => Value == null 
-            || String.IsNullOrEmpty(Value.ToString()) 
-            || String.IsNullOrWhiteSpace(Value.ToString());
-
-
-        public Values(object value)
-        {
-            Value = value;
-        }
 
         private int GetLenght()
         {
@@ -135,7 +218,8 @@ namespace klib
 
         public string ToJson()
         {
-            return Newtonsoft.Json.JsonConvert.SerializeObject(Value);
+            throw new NotImplementedException();
+            //return Newtonsoft.Json.JsonConvert.SerializeObject(Value);
         }
 
         public dynamic ToAny()

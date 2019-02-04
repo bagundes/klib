@@ -13,12 +13,12 @@ namespace klib.core
     {
         public static void Send(model.Report report)
         {
-            var client = new MongoClient(R.Project.MongoDBK);
-            var dbase = client.GetDatabase(report.CID);
-            var newcol = dbase.GetCollection<model.Report>("reports");
+            //var client = new MongoClient(R.Project.MongoDBK);
+            //var dbase = client.GetDatabase(report.CID);
+            //var newcol = dbase.GetCollection<model.Report>("reports");
 
-            report.Computer = ValuesEx.To(Machine()).ToJson();
-            newcol.InsertOne(report);
+            //report.Computer = ValuesEx.To(Machine()).ToJson();
+            //newcol.InsertOne(report);
         }
 
         public static void Save(model.Report report)

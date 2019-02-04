@@ -19,7 +19,25 @@ namespace klib.dbase
         private SqlConnection Cnn;
         private SqlDataReader DataReader;
         private bool FirstLine = false;
-        public readonly int Version;
+        private int version = -1;
+        public int Version
+        {
+            get
+            {
+                if (version > -1)
+                    return version;
+
+                version = 0;          
+                    
+                if(DoQuery("SELECT @@VERSION as 'Version'") > 0)                   
+                    version = Field(0).OnlyNumbers().ToInt();                    
+
+                klib.Shell.WriteLine(R.Project.ID, LOG, $"SQL Server version {version}");
+
+                return version;
+            }
+            
+        }
         public readonly SqlConnectionStringBuilder ConnString;
         public string LastCommand { get; protected set; }
 
@@ -29,24 +47,28 @@ namespace klib.dbase
         {
 
             if (String.IsNullOrEmpty(connString) && ConnStrings.Count > 0)
-                connString = ConnStrings[0].ConnectionString;
+                ConnString = ConnStrings[0];
+            else
+            {
+                ConnString = new SqlConnectionStringBuilder(connString);
+                if (!String.IsNullOrEmpty(ConnString.Password))                                   
+                    ConnString.Password = (new klib.model.Credentials1(ConnString.UserID, ConnString.Password)).Passwd;
+                
+            }
 
-            ConnString = new SqlConnectionStringBuilder(connString);
+            
+            
+
             try
             {
+
+                
                 if (ConnStrings.Count < 1)
                     klib.Shell.WriteLine(R.Project.ID, LOG, $"Trying to connect {ConnString.DataSource}.{ConnString.InitialCatalog}");
 
 
-                Cnn = new SqlConnection(connString);                
+                Cnn = new SqlConnection(ConnString.ToString());                
                 Cnn.Open();
-
-                DoQuery("SELECT @@VERSION as 'Version'");
-                if (Next())
-                    Version = Field(0).OnlyNumbers().ToInt();
-
-                if (ConnStrings.Count < 1)
-                    klib.Shell.WriteLine(R.Project.ID, LOG, $"SQL Server version {Version}");
 
                 if (!ConnStrings.Where(t => t.ConnectionString == connString).Any())
                     ConnStrings.Add(ConnString);
@@ -179,12 +201,17 @@ namespace klib.dbase
             return command.ExecuteNonQuery() > 0;
         }
 
+        /// <summary>
+        /// Return Value of field.
+        /// </summary>
+        /// <param name="index">Column name or number</param>
+        /// <returns></returns>
         public Values Field(object index)
         {
-            if (index.GetType().Name.ToLower() == "int32")
-                return ValuesEx.To(DataReader.GetValue((int)index));
+            if (index.GetType().Name.ToLower().StartsWith("int"))
+                return new Values(DataReader.GetValue((int)index), DataReader.GetName((int) index));
             else
-                return ValuesEx.To(DataReader[index.ToString()]);
+                return new Values(DataReader[index.ToString()], index.ToString());
             
         }
 
@@ -256,6 +283,12 @@ namespace klib.dbase
 
     public static class DbClientEx
     {
+        public static void RegFunction(Uri url)
+        {
+            var func = Shell.Read(url);
+            using (var cnn = new DbClient())           
+                cnn.NoQuery(func);            
+        }
 
 
         public static List<string> GetQueriesManager(string queryManagerPreFix)
@@ -431,11 +464,11 @@ namespace klib.dbase
                 {
                     var value = cnn.Field("VALUE").ToString();
                     var id = String.Empty;
-                    if (diff3 != null)
+                    if (!String.IsNullOrEmpty(diff3))
                         id = cnn.Field("DIFF3").ToString();
-                    if (diff2 != null)
+                    else if (!String.IsNullOrEmpty(diff2))
                         id = cnn.Field("DIFF2").ToString();
-                    else if (diff1 != null)
+                    else if (!String.IsNullOrEmpty(diff1))
                         id = cnn.Field("DIFF1").ToString();
                     else
                         id = cnn.Field("PARAM").ToString();

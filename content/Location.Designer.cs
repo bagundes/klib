@@ -104,5 +104,14 @@ namespace klib.content {
                 return ResourceManager.GetString("L00005_2", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to [{0}0006] It isn&apos;t possible convert the {1} value to {2}. {3}.
+        /// </summary>
+        internal static string L00006_3 {
+            get {
+                return ResourceManager.GetString("L00006_3", resourceCulture);
+            }
+        }
     }
 }

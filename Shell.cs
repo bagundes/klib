@@ -12,6 +12,12 @@ namespace klib
 {
     public static class Shell
     {
+        #if DEBUG
+        public static bool DebugMode = true;
+        #else
+        public static bool DebugMode = false;
+        #endif
+
         public const string LOG = "SHELL";
 #region Report
         public static void Report(implement.LException lex)
@@ -35,12 +41,12 @@ namespace klib
             core.ReportSystem.Save(rep);
             core.ReportSystem.Send(rep);
         }
-        #endregion
+#endregion
 
-        #region Debug
+#region Debug
         public static void WriteLine(int id, string log, Exception ex)
         {
-            #region DEBUG
+#region DEBUG
             if (log.Length > 6)
                 log = log.Substring(0, 6);
             else if (log.Length < 6)
@@ -51,7 +57,7 @@ namespace klib
                 Console.WriteLine($"ID{id.ToString("0000")} {DateTime.Now.ToString("HH:mm:ss")} ! {log.ToUpper()}: {ex.Message}");
             else
                 Shell.Report(ex.Message);
-            #endregion
+#endregion
         }
 
         public static void WriteLine(int id, string log, string message, bool clear = false)
@@ -63,10 +69,32 @@ namespace klib
             WriteLine(id, $"{log.ToUpper()}: {message}", clear);
         }
 
+        public static void WriteLoading(int val, int max)
+        {
+#region DEBUG
+            if (System.Environment.UserInteractive)
+            {
+                var barsize = 20;
+                var partial = (barsize * val) / max;
+                var progress = barsize - partial;
+                var line = String.Empty;
+                var loaded = 'Û';
+                var load = '²';
+
+                if (val > 0)
+                    Console.Write("\r");
+
+                line += new String(loaded, partial) + new string(load, progress);
+
+                Console.Write($"{line.Substring(0,20)} {partial}%");
+            }
+#endregion
+        }
+
         [Obsolete]
         public static void WriteLine(int id, string message, bool clear = false)
         {
-            #region DEBUG
+#region DEBUG
             if (System.Environment.UserInteractive)
             {
                 if (clear)
@@ -77,11 +105,11 @@ namespace klib
             {
                 Shell.Report(message);
             }
-            #endregion
+#endregion
         }
-        #endregion
+#endregion
 
-        #region CronTab
+#region CronTab
         public static bool CronNow(string mask)
         {
             var cron = new core.Cron(mask);
@@ -93,9 +121,9 @@ namespace klib
             var cron = new core.Cron(mask);
             return cron.Wait();
         }
-        #endregion
+#endregion
 
-        #region Encrypton
+#region Encrypton
         /// <summary>
         /// Encrypto the string
         /// </summary>
@@ -193,9 +221,9 @@ namespace klib
                 throw new LException(1, "Error to mixer the strings");
 
         }
-        #endregion
+#endregion
 
-        #region IO
+#region IO
         /// <summary>
         /// Verify if the file is locked
         /// </summary>
@@ -208,15 +236,18 @@ namespace klib
         }
         public static bool IsFileLocked(FileInfo file)
         {
+            file.Refresh();
             FileStream stream = null;
 
             try
             {
-                stream = file.Open(FileMode.Open, FileAccess.Read, FileShare.None);
+                if(file.Exists)
+                    stream = file.Open(FileMode.Open, FileAccess.Read, FileShare.None);
             }
             catch (IOException ex)
             {
-                klib.Shell.WriteLine(R.Project.ID, $"SHELL : File is lock. {ex.Message}");
+                klib.Shell.WriteLine(R.Project.ID, LOG, $"File is locked. {file.FullName}");
+                klib.Shell.WriteLine(R.Project.ID, LOG, $"Reason: {ex.Message}");
                 //o arquivo está indiposnível pelas seguintes causas:
                 //está sendo escrito
                 //utilizado por uma outra thread
@@ -247,7 +278,10 @@ namespace klib
             {
 
                 while (wait == true && Shell.IsFileLocked(file))
-                    System.Threading.Thread.Sleep(1500);
+                {
+                    klib.Shell.WriteLine(R.Project.ID, LOG, $"I'll try to write again after 2 seconds");
+                    System.Threading.Thread.Sleep(2000);
+                }
 
                 using (var fileW = new System.IO.StreamWriter(file.FullName, true))
                 {
@@ -272,9 +306,10 @@ namespace klib
                 var exists = System.IO.File.Exists(file.FullName);
                 while (wait == true && Shell.IsFileLocked(file) && exists)
                 {
-                    klib.Shell.WriteLine(R.Project.ID, $"SHELL : waiting the file is locked. {file.FullName}");
-                    System.Threading.Thread.Sleep(1500);
+                    klib.Shell.WriteLine(R.Project.ID, LOG, $"I'll try to write again after 2 seconds");
+                    System.Threading.Thread.Sleep(2000);
                 }
+                
 
                 if (ovride && exists)
                     System.IO.File.Delete(file.FullName);
@@ -400,18 +435,37 @@ namespace klib
                             bytes = fs.Read(buffer, 0, buffer.Length);
                             stream.Write(buffer, 0, bytes);
                             bytesSent += bytes;
+                            klib.Shell.WriteLine(R.Project.ID, LOG, $"{file.Name}:Sent {bytes} of {file.Length}.");
                         }
                     }
+
+                    klib.Shell.WriteLine(R.Project.ID, LOG, $"The file was saved in {url}.");
                 }
+
             }catch(Exception ex)
             {
                 WriteLine(R.Project.ID, LOG, $"Error trying to send the {file.FullName} in {url.AbsoluteUri}. {ex.Message}");
                 throw ex;
             }
-        }
-        #endregion
+       }
 
-        #region Printer
+        public static void Copy(Uri from, FileInfo to)
+        {          
+            SaveInFile(to, Read(from), true);
+        }
+
+        public static string Read(Uri url)
+        {
+            throw new NotImplementedException();
+            //klib.Shell.WriteLine(R.Project.ID, LOG, $"Geeting the file {url.Segments[url.Segments.Count-1]}");
+            //WebClient client = new WebClient();
+            //Stream stream = client.OpenRead(url.ToString());
+            //StreamReader reader = new StreamReader(stream);
+            //return reader.ReadToEnd();
+        }
+#endregion
+
+#region Printer
         public static bool Printer(model.Printer printer, FileInfo file)
         {
             // Open the file.
@@ -452,6 +506,6 @@ namespace klib
             Marshal.FreeCoTaskMem(pBytes);
             return bSucess;
         }
-        #endregion
+#endregion
     }
 }

@@ -5,10 +5,10 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("klib")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("Kvadratakubo library")]
+[assembly: AssemblyDescription("Library to standardize projects")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("https://github.com/kvadratakubo")]
 [assembly: AssemblyProduct("klib")]
 [assembly: AssemblyCopyright("Copyright ©  2019")]
 [assembly: AssemblyTrademark("")]
