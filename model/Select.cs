@@ -9,7 +9,7 @@ namespace klib.model
     public class Select
     {
         public string Name;
-        public Values Value;
+        public Dynamic Value;
         public bool Default;
 
         public Select(string name, object value, bool def = false)

@@ -20,7 +20,7 @@ namespace klib
 
         public const string LOG = "SHELL";
 #region Report
-        public static void Report(implement.LException lex)
+        public static void Report(Implement.InternalException lex)
         {
             var rep = new model.Report();
             rep.CID = "Undefined";
@@ -53,8 +53,10 @@ namespace klib
                 log += new string(' ', 6 - log.Length);
 
             if (System.Environment.UserInteractive)
-
-                Console.WriteLine($"ID{id.ToString("0000")} {DateTime.Now.ToString("HH:mm:ss")} ! {log.ToUpper()}: {ex.Message}");
+            {
+                Console.WriteLine($"ID{id.ToString("0000")} {DateTime.Now.ToString("HH:mm.ss")} ! {log.ToUpper()}: {ex.Message}");
+                Console.WriteLine($"{ex.StackTrace}");
+            }
             else
                 Shell.Report(ex.Message);
 #endregion
@@ -66,12 +68,17 @@ namespace klib
                 log = log.Substring(0, 6);
             else if (log.Length < 6)
                 log += new string(' ', 6 - log.Length);
-            WriteLine(id, $"{log.ToUpper()}: {message}", clear);
+
+            if (System.Environment.UserInteractive)
+            {
+                if (clear)
+                    Console.Clear();
+                Console.WriteLine($"ID{id.ToString("0000")} {DateTime.Now.ToString("HH:mm.ss")} . {log.ToUpper()}: {message}");
+            }          
         }
 
         public static void WriteLoading(int val, int max)
         {
-#region DEBUG
             if (System.Environment.UserInteractive)
             {
                 var barsize = 20;
@@ -88,10 +95,9 @@ namespace klib
 
                 Console.Write($"{line.Substring(0,20)} {partial}%");
             }
-#endregion
         }
 
-        [Obsolete]
+        [Obsolete("Extint", true)]
         public static void WriteLine(int id, string message, bool clear = false)
         {
 #region DEBUG
@@ -100,7 +106,7 @@ namespace klib
                 if (clear)
                     Console.Clear();
 
-                Console.WriteLine($"ID{id.ToString("0000")} {DateTime.Now.ToString("HH:mm:ss")} . {message}");
+                Console.WriteLine($"ID{id.ToString("0000")} {DateTime.Now.ToString("HH:mm.ss")} . {message}");
             } else
             {
                 Shell.Report(message);
@@ -218,7 +224,7 @@ namespace klib
             if (result.Length == totalSize)
                 return result;
             else
-                throw new LException(1, "Error to mixer the strings");
+                throw new KLIBException(1, "Error to mixer the strings");
 
         }
 #endregion
@@ -264,6 +270,7 @@ namespace klib
             return false;
         }
 
+		#region SaveInFile
         [Obsolete("Bug - Stream")]
         /// <summary>
         /// Save the stream in file
@@ -320,6 +327,7 @@ namespace klib
                     fileW.Close();
                 }
 
+				
             }
             finally
             {
@@ -327,68 +335,96 @@ namespace klib
             }
         }
 
-        public static System.IO.FileInfo CreateFile(byte[] bytes, string filename, bool replace = false)
+		/// <summary>
+        /// Save the array in the file. 
+        /// </summary>
+        /// <param name="file">Full file name</param>
+        /// <param name="lines">Information to be save</param>
+        /// <param name="ovride">Overwrite the file?</param>
+		/// <param name="wait">Wait is the file unlocked?</param>
+		public static void SaveInFile(FileInfo file, String[] lines, bool ovride = true, bool wait = true)
+		{
+			var exists = System.IO.File.Exists(file.FullName);
+			
+			if (ovride && exists)
+				System.IO.File.Delete(file.FullName);
+			
+			if(exists)
+				throw new NotImplementedException("The method not add new lines if file exists");
+			
+			while (wait == true && Shell.IsFileLocked(file) && exists)
+			{
+				klib.Shell.WriteLine(R.Project.ID, LOG, $"I'll try to write again after 2 seconds");
+				System.Threading.Thread.Sleep(2000);
+			}
+              
+			System.IO.File.WriteAllLines(file.FullName, lines);
+			
+		}
+
+        #endregion
+
+        #region CreateFile
+        public static FileInfo CreateTmpFile(string extension)
+        {
+            var name = DateTime.Now.ToString("ffffff");
+
+            return new FileInfo($"{TempDir()}/{name}.{extension}");
+        }
+
+        public static System.IO.FileInfo CreateFile(byte[] bytes, FileInfo file, bool replace = false)
         {
             if (bytes == null || bytes.Length < 1)
                 throw new Exception("The bytes cannot be empty");
 
-            return CreateFile(new MemoryStream(bytes), filename, replace);
-        }
-
-        public static FileInfo CreateTmpFile(string extension)
-        {
-            var name = DateTime.Now.ToString("yyyMMddhhmmssffff");
-
-            return new FileInfo($"{TempDir()}/{name}.{extension}");
+            return CreateFile(new MemoryStream(bytes), file, replace);
         }
 
         /// <summary>
         /// Create file in Temp directory application.
         /// </summary>
         /// <param name="stream">Data</param>
-        /// <param name="filename">File name</param>
+        /// <param name="file">File name</param>
         /// <param name="replace"></param>
         /// <returns></returns>
-        public static System.IO.FileInfo CreateFile(Stream stream, string filename, bool replace = false)
+        public static System.IO.FileInfo CreateFile(Stream stream, FileInfo file, bool replace = true)
         {
             if (stream == null)
                 throw new Exception("The stream is not to be empty");
 
 
-            if (System.IO.File.Exists(filename) && !replace)
-                return new System.IO.FileInfo(filename);
+            if (file.Exists && !replace)
+                return file;
 
-            using (var output = new FileStream(filename, FileMode.OpenOrCreate))
+            using (var output = new FileStream(file.FullName, FileMode.OpenOrCreate))
             {
                 stream.CopyTo(output);
                 stream.Close();
             }
 
-            return new System.IO.FileInfo(filename);
+            return file;
         }
 
-        public static System.IO.FileInfo CreateFile(String val, string filename, bool replace = false)
+        public static System.IO.FileInfo CreateFile(String val, FileInfo file, bool replace = false)
         {
-            if (System.IO.File.Exists(filename) && !replace)
-                return new System.IO.FileInfo(filename);
+            if (file.Exists && !replace)
+                return file;
 
-            System.IO.File.WriteAllText(filename, val);
+            System.IO.File.WriteAllText(file.FullName, val);
 
-            return new System.IO.FileInfo(filename);
+            return file;
         }
 
+		#endregion
         /// <summary>
         /// Get the user temp directory.
         /// </summary>
-        /// <param name="createFolder"></param>
+        /// <param name="folders">Create new folders</param>
         /// <returns></returns>
-        public static System.IO.DirectoryInfo TempDir(string createFolder = null)
+        public static System.IO.DirectoryInfo TempDir(params string[] folders)
         {
-            var tempDir = System.IO.Path.GetTempPath();
-            if (!String.IsNullOrEmpty(createFolder))
-                System.IO.Directory.CreateDirectory($"{tempDir}/{createFolder}");
-
-            return new System.IO.DirectoryInfo($"{tempDir}/{createFolder}");
+            var dir = System.IO.Path.GetTempPath() + System.IO.Path.Combine(folders);
+            return System.IO.Directory.CreateDirectory(dir);
         }
 
         public static FileInfo Mktemp(string ext = null)
@@ -406,20 +442,38 @@ namespace klib
                 return new FileInfo(fileFull);
 
         }
-        
-       public static void SendToFTP(Uri url, FileInfo file, klib.model.Credentials1 cred)
+
+        public static DirectoryInfo AppData(string prj_name, string create_folder = null)
+        {
+            var dir = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            var path = System.IO.Path.Combine(dir, klib.R.Company.AliasName,prj_name, create_folder);
+            if (!Directory.Exists(path))
+                Directory.CreateDirectory(path);
+
+            return new System.IO.DirectoryInfo(path);
+        }
+        /// <summary>
+        /// Send the file by ftp.
+        /// </summary>
+        /// <param name="url">URL ftp</param>
+        /// <param name="file">File</param>
+        /// <param name="cred">Credential</param>
+        /// <param name="send_in_packages">Send in packages with 2048 kb</param>
+        /// <param name="timeout">Seconds (-1 infinite)</param>
+       public static void SendToFTP(Uri url, FileInfo file, model.Credentials1 cred, bool send_in_packages = true, int timeout = 100)
        {
             try
             {
+                WriteLine(R.Project.ID, LOG, $"Sending the file {file.Name} to {url}.");
                 url = new Uri($"{url.AbsoluteUri}{file.Name}");
                 var request = WebRequest.Create(url) as FtpWebRequest;
                 request.Method = WebRequestMethods.Ftp.UploadFile;
                 request.Credentials = new NetworkCredential(cred.User, cred.Passwd);
                 request.UseBinary = true;
                 request.ContentLength = file.Length;
-
-                using (var resp = (FtpWebResponse)request.GetResponse())
-                     klib.Shell.WriteLine(R.Project.ID, LOG, $"FTP response {resp.StatusCode}");
+                request.Timeout = timeout == -1 ? -1 : timeout * 1000;
+                //using (var resp = (FtpWebResponse)request.GetResponse())
+                //     klib.Shell.WriteLine(R.Project.ID, LOG, $"FTP response {resp.StatusCode}");
                 
 
                 using (FileStream fs = file.OpenRead())
@@ -428,18 +482,50 @@ namespace klib
                     int bytesSent = 0;
                     int bytes = 0;
 
-                    using (var stream = request.GetRequestStream())
+                    var timestart = DateTime.Now;
+                    using (var reqStream = request.GetRequestStream())
                     {
+                        
+
                         while (bytesSent < file.Length)
                         {
-                            bytes = fs.Read(buffer, 0, buffer.Length);
-                            stream.Write(buffer, 0, bytes);
-                            bytesSent += bytes;
-                            klib.Shell.WriteLine(R.Project.ID, LOG, $"{file.Name}:Sent {bytes} of {file.Length}.");
-                        }
+                            if (send_in_packages)
+                            {
+                                bytes = fs.Read(buffer, 0, buffer.Length);
+                                reqStream.Write(buffer, 0, bytes);
+                                bytesSent += bytes;
+                                ConsoleProgressBar(bytesSent, file.Length, $"Sent {Math.Round(((decimal)bytesSent)/1024/1024, 3)}mb from {Math.Round(((decimal)file.Length)/1024/1024, 3)}mb in {(int)DateTime.Now.Subtract(timestart).TotalSeconds} secs.");
+                            } else
+                            {
+                                using (var reader = new StreamReader(fs))
+                                {
+                                    var fc = Encoding.UTF8.GetBytes(reader.ReadToEnd());
+                                    reqStream.Write(fc, 0, fc.Length);
+
+                                    break;
+                                }
+                                    
+                            }                            
+                        }                        
                     }
 
-                    klib.Shell.WriteLine(R.Project.ID, LOG, $"The file was saved in {url}.");
+                    try
+                    {
+                        // Sometimes the ftp server don't response. I modified the timeout and if occur error 
+                        // the method return only the information without the status.
+                        //request.Timeout = 10000; // 10 secs
+
+                        //using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
+                        //    klib.Shell.WriteLine(R.Project.ID, LOG, $"Upload File Completed in {DateTime.Now.Subtract(timestart).Seconds} secs, status {response.StatusDescription}");
+                        if (send_in_packages)
+                            Console.Write("\n");
+                        klib.Shell.WriteLine(R.Project.ID, LOG, $"Upload File Completed in {DateTime.Now.Subtract(timestart).ToString(@"hh\:mm\:ss")}.");
+                    }
+                    catch(Exception ex)
+                    {
+                        
+                    }
+                    
                 }
 
             }catch(Exception ex)
@@ -507,5 +593,44 @@ namespace klib
             return bSucess;
         }
 #endregion
+
+		public static void ConsoleProgressBar(long progress, long total, string message = null)
+		{
+            int perc = (int)(((double)progress / total) * 100);
+
+            int pos_end = 15;            
+            //draw empty progress bar
+            //Console.CursorLeft = pos_ini;
+            //Console.Write("["); //start
+            Console.CursorLeft = pos_end + 1;
+			Console.Write("."); //end
+			Console.CursorLeft = 0;
+			float onechunk = pos_end * ((float)perc / 100) ;
+            
+            //draw filled part
+            int position = 0;
+			for (int i = 0; i < onechunk; i++)
+			{
+				Console.BackgroundColor = ConsoleColor.Gray;
+				Console.CursorLeft = position++;
+				Console.Write(" ");
+			}
+
+			//draw unfilled part
+			for (int i = position; i <= (pos_end - 1) ; i++)
+			{
+				Console.BackgroundColor = ConsoleColor.Green;
+				Console.CursorLeft = position++;
+				Console.Write(" ");
+			}
+
+            //draw totals
+            Console.CursorLeft = pos_end + 2;
+			Console.BackgroundColor = ConsoleColor.Black;
+            
+            var msg = $" {new string(' ', 3 - perc.ToString().Length)}{perc}%  : {message}";
+            Console.Write(msg /* + new string(' ', Console.WindowWidth - msg.Length)*/);
+			//Console.Write(progress.ToString() + " of " + total.ToString() + "    " + message); //blanks at the end remove any excess
+		}
     }
 }

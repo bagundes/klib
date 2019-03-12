@@ -11,7 +11,7 @@ namespace klib
         #region CSV file
         public static string CSV(string delimeted, string escape, object[] values)
         {
-            var vals = new Values[values.Length];
+            var vals = new Dynamic[values.Length];
 
             for(int i = 0; i < vals.Length; i++)            
                 vals[i] = ValuesEx.To(values[i]);
@@ -26,7 +26,7 @@ namespace klib
         /// <param name="escape"></param>
         /// <param name="values">You can force the value to type the string, you just need to add the value of the string in comments.</param>
         /// <returns></returns>
-        public static string CSV(string delimeted, string escape, Values[] values)
+        public static string CSV(string delimeted, string escape, Dynamic[] values)
         {
             var line = new List<string>();
 

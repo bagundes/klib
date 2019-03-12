@@ -6,17 +6,17 @@ using System.Threading.Tasks;
 
 namespace klib
 {
-    internal class LException : implement.LException
+    internal class KLIBException : Implement.InternalException
     {
-        public LException(string message) : base(message)
+        public KLIBException(string message) : base(message)
         {
         }
 
-        public LException(Exception ex) : base(ex)
+        public KLIBException(Exception ex) : base(ex)
         {
         }
 
-        public LException(int code, params object[] values) : base(code, values)
+        public KLIBException(int code, params object[] values) : base(code, values)
         {
 
         }

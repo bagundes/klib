@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -9,29 +10,63 @@ using System.Threading.Tasks;
 
 namespace klib
 {
-    public class Values
+    public class Dynamic
     {
-        public readonly object Value;
+        public readonly dynamic Value;
         public int Lenght => GetLenght();
-
+        public static Dynamic Empty => new Dynamic("");
+        public string Description => Name;
         public string Name { get; protected set; }
         /// <summary>
         /// Transport more informations 
         /// </summary>
         public string Comments = String.Empty;
 
-        public Values(object value)
+        public Dynamic(dynamic value)
         {
             Value = value;
         }
 
-        public Values(object value, string name)
+        public Dynamic(dynamic value, string name)
         {
             Value = value;
             Name = name;
         }
 
-        #region Informations
+        #region VAL: Validations
+        public bool ValStartWith(string val)
+        {
+            return Value.ToString().StartsWith(val, StringComparison.InvariantCultureIgnoreCase);
+        }
+
+        /// <summary>
+        /// Return Email valid
+        /// </summary>
+        /// <param name="mail_alt">If invalid e-mailo, return alternative e-mail</param>
+        /// <returns>Email</returns>
+        public string ValEmail(string mail_alt = null)
+        {
+            Regex regex = new Regex(E.RegexMask.Email);
+            Match match = regex.Match(Value.ToString());
+            if (match.Success)
+                return ToString();
+            else
+            {
+                if (!string.IsNullOrEmpty(mail_alt) && regex.Match(mail_alt).Success)
+                    return mail_alt;
+                else
+                    throw new KLIBException(7, ToString(), "e-mail");
+            }
+        }
+
+        public bool ValTrue => ToBool();
+        public bool ValFalse => !ToBool();
+        #endregion
+        #region INF: Information
+        public string InfTypeOf => Value.GetType().Name.ToUpper();
+        #endregion
+        
+        #region IS: Question
         /// <summary>
         /// Verify the value is type of numeric
         /// </summary>
@@ -54,7 +89,7 @@ namespace klib
             }
             else
             {
-                switch (TypeOf)
+                switch (InfTypeOf)
                 {
                     case "DOUBLE":
                     case "INT":
@@ -71,21 +106,8 @@ namespace klib
         public bool IsEmpty => Value == null
             || String.IsNullOrEmpty(Value.ToString())
             || String.IsNullOrWhiteSpace(Value.ToString());
-        public string TypeOf => Value.GetType().Name.ToUpper();
-        #endregion
-
-        #region Validations
-        public bool StartWith(string val)
-        {
-            return Value.ToString().StartsWith(val, StringComparison.InvariantCultureIgnoreCase);
-        }
-
-        public bool IsTrue => ToBool();
-        public bool IsFalse => !ToBool();
 
         #endregion
-
-
 
         #region Convert
         public bool ToBool(string totrue = null)
@@ -112,6 +134,14 @@ namespace klib
             }
         }
 
+        public char ToCharBool(char yes = 'Y', char no = 'N')
+        {
+            return ToBool(yes.ToString()) ? yes : no;
+        }
+        public string ToStringBool(string yes = "YES", string no = "NO")
+        {
+            return ToBool(yes.ToString()) ? yes : no;
+        }
         public decimal ToDecimal()
         {
             try
@@ -119,7 +149,7 @@ namespace klib
                 return Decimal.Parse(Value.ToString());
             }catch(Exception ex)
             {
-                throw new LException(5, Value.ToString(), "Decimal", ex.Message);
+                throw new KLIBException(5, Value.ToString(), "Decimal", ex.Message);
             }
         }
 
@@ -133,7 +163,7 @@ namespace klib
             }
             catch (System.UriFormatException ex)
             {
-                throw new LException(5, Value.ToString(), ex.Message);
+                throw new KLIBException(5, Value.ToString(), ex.Message);
             }
         }
         public FileInfo ToFile()
@@ -141,13 +171,6 @@ namespace klib
             return new FileInfo(ToString());
         }
         #endregion
-
-
-
-
-
-
-
 
         /// ///////////////////////////////////////////////////////////////////////////////////
         public DirectoryInfo ToDirectory()
@@ -158,7 +181,7 @@ namespace klib
             switch(Value.ToString().ToUpper())
             {
                 case "%TEMP%": return Shell.TempDir();
-                default: throw new LException(1, $"Directory not exists or without permissions. {Value.ToString()}");
+                default: throw new KLIBException(1, $"Directory not exists or without permissions. {Value.ToString()}");
             }
         }
 
@@ -170,7 +193,7 @@ namespace klib
             if (Value.GetType() == typeof(Array))
                 return ((Array)Value).Length;
             else
-                throw new LException(1,$"({Value.GetType()}) Type of variable isn't not defined.");
+                throw new KLIBException(1,$"({Value.GetType()}) Type of variable isn't not defined.");
         }
 
 
@@ -188,10 +211,6 @@ namespace klib
             return Value;
         }
 
-        public dynamic Dynamic()
-        {
-            return Value;
-        }
         public int ToInt(int ifnull = 0)
         {
             try
@@ -231,6 +250,7 @@ namespace klib
             return Value.ToString();
         }
 
+
         public DateTime ToDateTime(string format)
         {
             return DateTime.ParseExact(Value.ToString(),format, System.Globalization.CultureInfo.InvariantCulture);
@@ -263,20 +283,20 @@ namespace klib
                 val = val.Replace(".", "");
 
             val = val.Replace(",", ".");
-            return double.Parse(Regex.Replace(Value.ToString(), "[^0-9.]+", ""));
+            return double.Parse(System.Text.RegularExpressions.Regex.Replace(Value.ToString(), "[^0-9.]+", ""));
         }
 
-        public Values OnlyNumbers(int def = 0)
+        public Dynamic OnlyNumbers(int def = 0)
         {
             if (IsEmpty)
-                return new Values(def);
+                return new Dynamic(def);
 
             var val = Regex.Match(ToString(), @"\d+").Value;
 
             if (String.IsNullOrEmpty(val))
-                return new Values(def);
+                return new Dynamic(def);
             else
-                return new Values(val);
+                return new Dynamic(val);
 
         }
 
@@ -304,7 +324,7 @@ namespace klib
             if (Value.GetType().Name == "Byte[]")
                 return (byte[])Value;
             else
-                throw new LException(1, "Value isn't byte[]");
+                throw new KLIBException(1, "Value isn't byte[]");
         }
 
         #region DateTime
@@ -333,7 +353,7 @@ namespace klib
             var printer = new model.Printer(Value.ToString());
 
             if (validate && !printer.ValidPrinter())
-                throw new LException(1, $"Printer isn't {Value.ToString()} valid");
+                throw new KLIBException(1, $"Printer isn't {Value.ToString()} valid");
 
             return printer;
         }
@@ -350,16 +370,55 @@ namespace klib
 
     }
 
+
+    public class DicDymanic //: IDictionary<string, Dynamic>, ICollection<KeyValuePair<string, Dynamic>>, IEnumerable<KeyValuePair<string, Dynamic>>, IEnumerable, IDictionary, ICollection, IReadOnlyDictionary<string, Dynamic>, IReadOnlyCollection<KeyValuePair<string, Dynamic>>, ISerializable, IDeserializationCallback
+    {
+       
+        private Dictionary<string, Dynamic> Dic = new Dictionary<string, Dynamic>();
+        public int Count => Dic.Count;
+
+        public Dynamic this[string key]
+        { get
+            {
+                return Dic[key];
+            }
+            set
+            {
+                Dic[key] = value;
+            }
+        }
+
+                
+        public void Add(Dynamic dyn)
+        {
+            this[dyn.Name] = dyn;   
+        }
+    }
+
+
     public static class ValuesEx
     {
-        public static Values Empty => new Values("");
-        public static Values To(object value)
+        
+        public static Dynamic To(object value)
         {
-            return new Values(value);
+            return new Dynamic(value);
         }     
         public static string RegexReplace(object val, string pattern)
         {
             return To(val).RegexReplace(pattern);
+        }
+
+        /// <summary>
+        /// Validate the value using regex
+        /// </summary>
+        /// <param name="val">Value to validate</param>
+        /// <param name="pattern">Regex format (klib.E.RegexMask)</param>
+        /// <returns></returns>
+        public static bool RegexValidate(object val, string pattern)
+        {
+            Regex regex = new Regex(pattern);
+            Match match = regex.Match(val.ToString());
+            return match.Success;
         }
 
         /// <summary>
@@ -394,17 +453,6 @@ namespace klib
                 return new StreamReader(assembly.GetManifestResourceStream(resourceName));
             else
                 return null;
-        }
-
-        /// <summary>
-        /// Transform @!! to Namespace 
-        /// </summary>
-        /// <param name="value">Value</param>
-        /// <returns></returns>
-        public static string NS(string value)
-        {
-            value = value.Replace("U_!!", $"U_{klib.R.Company.NS}");
-            return value.Replace("@!!", $"@{klib.R.Company.NS}");
         }
     }
 }

@@ -11,6 +11,7 @@ namespace klib
     {
         public static class Project
         {
+            public static string Language => null;
             public static string MongoDBK => "mongodb+srv://kurumin:SX8S4p5p2QqVK7xK@kurumin-qa2p6.mongodb.net/test?retryWrites=true";
             public static System.Reflection.Assembly assembly => System.Reflection.Assembly.GetExecutingAssembly();
             public static Version Version => assembly.GetName().Version;
@@ -18,7 +19,7 @@ namespace klib
             public static int ID => Version.Major;
             public const string SP_PARAM = "KK_PARAM";
             public static string[] Resources => assembly.GetManifestResourceNames();
-            public static ResourceManager LocationResx => new ResourceManager(Resources.Where(t => t.Contains("content.Location")).FirstOrDefault(), assembly);
+            public static ResourceManager LocationResx => new ResourceManager($"{typeof(R).Namespace}.content.Location{klib.R.Project.Language}", assembly);
         }
 
         internal static class Security

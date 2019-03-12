@@ -117,6 +117,10 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="L00000_1" xml:space="preserve">
+    <value>[{0}0000] Error library: {1}</value>
+    <comment>LIB: It's need to fix the code.</comment>
+  </data>
   <data name="L00001_1" xml:space="preserve">
     <value>[{0}0001] - Internal error: {1}</value>
   </data>
@@ -135,5 +139,9 @@
   <data name="L00006_3" xml:space="preserve">
     <value>[{0}0006] It isn't possible convert the {1} value to {2}. {3}</value>
     <comment>Generic message when error occur to convert the type of variables</comment>
+  </data>
+  <data name="L00007_2" xml:space="preserve">
+    <value>[{0}0007] The "{1}" value format isn't {2} valid.</value>
+    <comment>SHELL: Generic message then validate the value.</comment>
   </data>
 </root>

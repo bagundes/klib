@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace klib.implement
+namespace klib.Implement
 {
     public interface IInit
     {
@@ -12,5 +12,6 @@ namespace klib.implement
         void Configure();
         void Populate();
         void Destruct();
+        
     }
 }

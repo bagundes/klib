@@ -33,7 +33,7 @@ namespace klib.core
         public Cron(string mask)
         {
             if (!Validate(mask))
-                throw new LException(2, "The cron format is not valid.");
+                throw new KLIBException(2, "The cron format is not valid.");
 
             var values = mask.Split(' ');
             SpecialChars(values[0], TypeValue.Minute);
@@ -154,7 +154,7 @@ namespace klib.core
                 case TypeValue.Month: min = 1; max = 12; break;
                 case TypeValue.Week: min = 0; max = 6; zero = 1;  break;
                 default:
-                    throw new LException(2, "Type Value invalid in Cron Load.");
+                    throw new KLIBException(2, "Type Value invalid in Cron Load.");
             }
 
             // If values is zero
@@ -163,7 +163,7 @@ namespace klib.core
 
             // Validation the conditions
             if (start < min || start > max || end < min || end > max || start > end)
-                throw new LException(2, $"Value of {typeValue.ToString()} is wrong in the Cron");
+                throw new KLIBException(2, $"Value of {typeValue.ToString()} is wrong in the Cron");
 
             int size = (end - start + zero) / step;
             var foo = new int[size];
@@ -182,7 +182,7 @@ namespace klib.core
                 case TypeValue.Month: months = foo; break;
                 case TypeValue.Week: weeks = foo;  break;
                 default:
-                    throw new LException(2, "Type Value invalid in Cron Load.");
+                    throw new KLIBException(2, "Type Value invalid in Cron Load.");
             }
 
         }

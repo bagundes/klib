@@ -12,6 +12,8 @@ namespace klib
         {
             public static string OnlyLetterAndNumbers => "[^0-9a-zA-Z]+";
             public static string ValidNumbers => @"^[\d,.?!]+$";
+
+            public static string Email => @"/^[a-z0-9.]+@[a-z0-9]+\.[a-z]+\.([a-z]+)?$/i";
         }
 
         public enum Resource

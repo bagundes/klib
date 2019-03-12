@@ -19,7 +19,7 @@ namespace klib.content {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Location {
@@ -57,6 +57,15 @@ namespace klib.content {
             }
             set {
                 resourceCulture = value;
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to [{0}0000] Error library: {1}.
+        /// </summary>
+        internal static string L00000_1 {
+            get {
+                return ResourceManager.GetString("L00000_1", resourceCulture);
             }
         }
         
@@ -111,6 +120,15 @@ namespace klib.content {
         internal static string L00006_3 {
             get {
                 return ResourceManager.GetString("L00006_3", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to [{0}0007] The &quot;{1}&quot; value format isn&apos;t {2} valid..
+        /// </summary>
+        internal static string L00007_2 {
+            get {
+                return ResourceManager.GetString("L00007_2", resourceCulture);
             }
         }
     }
